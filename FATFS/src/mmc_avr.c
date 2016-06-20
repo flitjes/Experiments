@@ -17,7 +17,6 @@
 
 /* Port controls  (Platform dependent) */
 #define SS		    (1<<PORTD4)
-#define SS_WIZNET   (1<<PORTD3)
 #define MOSI	    (1<<PORTB3)
 #define MISO	    (1<<PORTB4)
 #define SCK		    (1<<PORTB5)
@@ -80,8 +79,8 @@ BYTE CardType;			/* Card type flags */
 static
 void power_on (void)
 {
-	PORTB |= SS_WIZNET | MOSI;	/* Configure SCK/MOSI/CS as output */
-	DDRB  |= SS_WIZNET | SCK | MOSI;
+	PORTB |= MOSI;	/* Configure SCK/MOSI/CS as output */
+	DDRB  |= SCK | MOSI;
 
     PORTD |= SS;	/* Configure SCK/MOSI/CS as output */
 	DDRD  |= SS;
@@ -96,8 +95,8 @@ void power_off (void)
 {
 	SPCR = 0;				/* Disable SPI function */
 
-	DDRB  &= ~(SS_WIZNET | SCK | MOSI);	/* Set SCK/MOSI/CS as hi-z, INS#/WP as pull-up */
-	PORTB &= ~(SS_WIZNET | SCK | MOSI);
+	DDRB  &= ~(SCK | MOSI);	/* Set SCK/MOSI/CS as hi-z, INS#/WP as pull-up */
+	PORTB &= ~(SCK | MOSI);
 	DDRD  &= ~(SS);	/* Set SCK/MOSI/CS as hi-z, INS#/WP as pull-up */
 	PORTD &= ~(SS);
 #if 0
