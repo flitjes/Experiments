@@ -16,12 +16,14 @@
 
 
 /* Port controls  (Platform dependent) */
-#define SS		    (1<<PORTD4)
-#define MOSI	    (1<<PORTB3)
-#define MISO	    (1<<PORTB4)
-#define SCK		    (1<<PORTB5)
-#define CS_LOW()	PORTD &= ~SS			/* CS=low */
-#define	CS_HIGH()	PORTD |= SS			/* CS=high */
+#define SS_ATMEGA (1 << PORTB0)
+#define SS		    (1<<PORTG5)
+#define SS_WIZNET		    (1<<PORTB4)
+#define MOSI	    (1<<PORTB2)
+#define MISO	    (1<<PORTB3)
+#define SCK		    (1<<PORTB1)
+#define CS_LOW()	PORTG &= ~SS			/* CS=low */
+#define	CS_HIGH()	PORTG |= SS			/* CS=high */
 #if 0
 #define MMC_CD		(!(PINB & 0x10))	/* Card detected.   yes:true, no:false, default:true */
 #define MMC_WP		(PINB & 0x20)		/* Write protected. yes:true, no:false, default:false */
@@ -79,12 +81,14 @@ BYTE CardType;			/* Card type flags */
 static
 void power_on (void)
 {
-	PORTB |= MOSI;	/* Configure SCK/MOSI/CS as output */
-	DDRB  |= SCK | MOSI;
+	PORTB |= SS_WIZNET | MOSI;	/* Configure SCK/MOSI/CS as output */
+	DDRB  |= SS_WIZNET | SCK | MOSI | SS_ATMEGA;
+	
+    PORTB |= SS_WIZNET;	/* Configure SCK/MOSI/CS as output */
+	DDRB  |= SS_WIZNET;
 
-    PORTD |= SS;	/* Configure SCK/MOSI/CS as output */
-	DDRD  |= SS;
-
+    PORTG |= SS;	/* Configure SCK/MOSI/CS as output */
+	DDRG  |= SS;
      
 	SPCR = 0x52;			/* Enable SPI function in mode 0 */
 	SPSR = 0x01;			/* SPI 2x mode */
@@ -95,10 +99,10 @@ void power_off (void)
 {
 	SPCR = 0;				/* Disable SPI function */
 
-	DDRB  &= ~(SCK | MOSI);	/* Set SCK/MOSI/CS as hi-z, INS#/WP as pull-up */
-	PORTB &= ~(SCK | MOSI);
-	DDRD  &= ~(SS);	/* Set SCK/MOSI/CS as hi-z, INS#/WP as pull-up */
-	PORTD &= ~(SS);
+	DDRB  &= ~(SCK | MOSI | SS_WIZNET | SS_ATMEGA);	/* Set SCK/MOSI/CS as hi-z, INS#/WP as pull-up */
+	PORTB &= ~(SCK | MOSI | SS_WIZNET | SS_ATMEGA);
+	DDRG  &= ~(SS);	/* Set SCK/MOSI/CS as hi-z, INS#/WP as pull-up */
+	PORTG &= ~(SS);
 #if 0
 	PORTB |=  0b00110000;
 #endif
