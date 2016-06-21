@@ -10,6 +10,8 @@
 #include "diskio.h"
 #include "ff.h"
 #include "uart.h"
+#include <util/delay.h>
+
 /* Defines for UART Configurations */
 #define FOSC 16000000 /* Clock speed */
 #define BAUD 9600 /* Baud Rate */
@@ -33,7 +35,9 @@ int main(void)
 	TIMSK1 = (1 << OCIE1A); //Output compare match A int enable
 	sei();
 	
-	PSTR("%u:");
+    /* Give Wiznet module time to intilize, this prevents the spi bus from working correctly */ 
+    _delay_ms(100);    
+    PSTR("%u:");
 	UART_puts("Trying...\r\n");
 	res = f_mount(&fs,"1", 0);
 	sprintf(msg,"fmount result: %02i\r\n",res);
