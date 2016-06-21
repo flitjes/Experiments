@@ -28,9 +28,9 @@
 #                is connected.
 # FUSES ........ Parameters for avrdude to flash the fuses appropriately.
 
-DEVICE     ?= atmega328p
+DEVICE     ?= atmega2560
 CLOCK      = 16000000
-PROGRAMMER ?= -c arduino -P /dev/ttyUSB1 -b 115200
+PROGRAMMER ?= -c arduino -P /dev/ttyACM0 -b 115200 -cwiring
 SOURCE    = main.c ff.c mmc_avr.c uart.c
 BUILDDIR = build
 SOURCEDIR = src
