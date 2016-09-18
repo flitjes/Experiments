@@ -31,7 +31,7 @@
 DEVICE     ?= atmega2560
 CLOCK      = 16000000
 PROGRAMMER ?= -c arduino -P /dev/ttyACM0 -b 115200 -cwiring
-SOURCE    = main.c usart.c twi.c
+SOURCE    = main.c usart.c twi.c nunchuck.c
 BUILDDIR = build
 SOURCEDIR = src
 # FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
