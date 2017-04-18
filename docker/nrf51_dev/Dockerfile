@@ -12,9 +12,9 @@ RUN apt-get update -q \
      && make \
      && make install \
      && cd /workspace \
-     && wget http://developer.nordicsemi.com/nRF5_SDK/nRF5_SDK_v13.x.x/nRF5_SDK_13.0.0_04a0bfd.zip \
+     && wget https://developer.nordicsemi.com/nRF5_SDK/nRF5_SDK_v12.x.x/nRF5_SDK_12.2.0_f012efa.zip \
      && mkdir nrf5_sdk \
-     && unzip nRF5_SDK_13.0.0_04a0bfd.zip -d nrf5_sdk \
+     && unzip nRF5_SDK_12.2.0_f012efa.zip -d nrf5_sdk \
      && echo "GNU_INSTALL_ROOT := /workspace/gcc-arm-none-eabi-6-2017-q1-update\nGNU_VERSION := 6.3.1\nGNU_PREFIX := arm-none-eabi" > /workspace/nrf5_sdk/components/toolchain/gcc/Makefile.posix \
      && wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/6_1-2017q1/gcc-arm-none-eabi-6-2017-q1-update-linux.tar.bz2 \
      && tar xf gcc-arm-none-eabi-6-2017-q1-update-linux.tar.bz2 \
