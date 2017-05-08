@@ -4,7 +4,7 @@ MAINTAINER Christian Litjes <flitjesdev@gmail.com>
 WORKDIR /workspace
 
 RUN apt-get update -q \
-     && apt-get install -y git build-essential libtool pkg-config autoconf automake texinfo libusb-1.0.0-dev vim usbutils tmux unzip wget\
+     && apt-get install -y git build-essential libtool pkg-config autoconf automake texinfo libusb-1.0.0-dev vim usbutils tmux unzip wget telnet cscope\
      && git clone https://github.com/flitjes/openocd.git openocd-code \
      && cd openocd-code/ \
      && ./bootstrap \
