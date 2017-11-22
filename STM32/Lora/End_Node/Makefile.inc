@@ -1,0 +1,6 @@
+# C sources
+C_SOURCES += \
+Src/vcom.c \
+
+CFLAGS += -DUSE_STM32L0XX_NUCLEO -DREGION_EU433
+

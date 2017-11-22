@@ -41,7 +41,7 @@
 
 extern void _Error_Handler(char *, int);
 /* USER CODE BEGIN 0 */
-
+#include "vcom.h"
 /* USER CODE END 0 */
 /**
   * Initializes the Global MSP.
@@ -157,6 +157,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN USART1_MspInit 1 */
+ 
+  vcom_IoInit( );
 
   /* USER CODE END USART1_MspInit 1 */
   }
@@ -181,7 +183,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
 
   /* USER CODE BEGIN USART1_MspDeInit 1 */
-
+  	vcom_IoDeInit( );
   /* USER CODE END USART1_MspDeInit 1 */
   }
 
