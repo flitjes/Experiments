@@ -66,10 +66,6 @@ C_SOURCES +=  \
 ../../../../../../../../Drivers/BSP/Components/lps25hb/LPS25HB_Driver.c \
 ../../../../../../../../Drivers/BSP/Components/lps25hb/LPS25HB_Driver_HL.c \
 ../../../../../../../../Drivers/BSP/Components/sx1272/sx1272.c \
-../../../../../../../../Drivers/BSP/LRWAN_NS1/lrwan_ns1.c \
-../../../../../../../../Drivers/BSP/LRWAN_NS1/lrwan_ns1_humidity.c \
-../../../../../../../../Drivers/BSP/LRWAN_NS1/lrwan_ns1_pressure.c \
-../../../../../../../../Drivers/BSP/LRWAN_NS1/lrwan_ns1_temperature.c \
 ../../../../../../../../Drivers/BSP/STM32L0xx_Nucleo/stm32l0xx_nucleo.c \
 ../../../../../../../../Drivers/BSP/sx1272mb2das/sx1272mb2das.c \
 ../../../../../../../../Middlewares/Third_Party/Lora/Core/lora.c \
@@ -142,7 +138,7 @@ C_DEFS =  \
 -DUSE_HAL_DRIVER \
 -DSTM32L073xx \
 -DUSE_STM32L0XX_NUCLEO \
--DREGION_EU433 \
+-DREGION_EU868 \
 
 # AS includes
 AS_INCLUDES = 
