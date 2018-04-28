@@ -66,6 +66,7 @@ Maintainer: Miguel Luis, Gregory Cristian and Wael Guibene
 #include "timeServer.h"
 #include "vcom.h"
 #include "version.h"
+#include "i2c.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -145,7 +146,55 @@ static  LoRaParam_t LoRaParamInit= {TX_ON_TIMER,
                                     LORAWAN_PUBLIC_NETWORK,
                                     JOINREQ_NBTRIALS};
 
+uint16_t calibration_digits[3];
+
 /* Private functions ---------------------------------------------------------*/
+int32_t bmp280_compensate_temperature_int32(int32_t v_uncomp_temperature_s32)
+{
+  int32_t v_x1_u32r = 0;
+  int32_t v_x2_u32r = 0;
+  int32_t temperature = 0;
+  /* calculate true temperature*/
+  /*calculate x1*/
+  v_x1_u32r = ((((v_uncomp_temperature_s32 >> 3) - ((uint32_t)calibration_digits[0] << 1)))
+      * ((int32_t)calibration_digits[1])) >> 11;
+  /*calculate x2*/ //(((((31734) - (27819)) * ((31734) - (27819))) >> 12 ) * 64536) >> 14
+  v_x2_u32r = (((((v_uncomp_temperature_s32 >> 4) - ((uint32_t)calibration_digits[0])) * 
+              ((v_uncomp_temperature_s32 >> 4) - ((uint32_t)calibration_digits[0]))) >> 12) * 
+              ((int32_t)calibration_digits[2])) >> 14;
+  /*calculate t_fine*/
+  uint32_t t_fine = v_x1_u32r + v_x2_u32r;
+  /*calculate temperature*/
+  PRINTF("vx1 %d vx2 %d t_fine %d\n\r", v_x1_u32r, v_x2_u32r, t_fine); 
+  temperature = (t_fine * 5 + 128) >> 8;
+
+  return temperature;
+}
+
+double bmp280_compensate_temperature_double(int32_t v_uncomp_temperature_s32){
+{
+  double v_x1_u32r = 0;
+  double v_x2_u32r = 0;
+  double temperature = 0;
+  /* calculate x1*/
+  v_x1_u32r = (((double)v_uncomp_temperature_s32) / 16384.0 -
+      ((double)calibration_digits[0]) / 1024.0) *
+  ((double)calibration_digits[1]);
+  /* calculate x2*/
+  v_x2_u32r = ((((double)v_uncomp_temperature_s32) / 131072.0 -
+      ((double)calibration_digits[0]) / 8192.0) *
+      (((double)v_uncomp_temperature_s32) / 131072.0 -
+      ((double)calibration_digits[0]) / 8192.0)) *
+  ((double)calibration_digits[2]);
+  /* calculate t_fine*/
+  uint32_t t_fine = (int32_t)(v_x1_u32r + v_x2_u32r);
+  /* calculate true pressure*/
+  temperature = (v_x1_u32r + v_x2_u32r) / 5120.0;
+
+  return temperature;
+}
+}
+
 
 /**
   * @brief  Main program
@@ -167,12 +216,28 @@ int main( void )
   HW_Init( );
   
   /* USER CODE BEGIN 1 */
+#if defined STM32L073xx && defined USE_STM32L0XX_NUCLEO
+  if(!I2C_INIT()){
+    PRINTF("I2C init succeeded\r\n");
+    //config sensor
+    uint8_t buff[6] = {0x3f};
+    I2C_EXPBD_WriteData(0x77 << 1, 0xF4, buff, 1);
+    I2C_EXPBD_ReadData(0x77<< 1, 0xD0, buff, 1); 
+    PRINTF("Chip id: %d\n\r", buff[0]);
+    I2C_EXPBD_ReadData(0x77<< 1, 0x88, buff, sizeof(buff));
+    calibration_digits[0] = (uint16_t)buff[1] << 8 | buff[0];
+    calibration_digits[1] = (uint16_t)buff[3] << 8 | buff[2];
+    calibration_digits[2] = (uint16_t)buff[5] << 8 | buff[4];
+
+    PRINTF("Calibration %d %d %d\n\r", calibration_digits[0], calibration_digits[1], calibration_digits[2]);
+  }
+#endif
   /* USER CODE END 1 */
   
   /* Configure the Lora Stack*/
   lora_Init( &LoRaMainCallbacks, &LoRaParamInit);
   
-  PRINTF("VERSION: %X\n\r", VERSION);
+  PRINTF("VERSION: %X DATE: %s TIME: %s\n\r", VERSION, __DATE__, __TIME__);
   
   /* main loop*/
   while( 1 )
@@ -204,6 +269,22 @@ static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
   uint16_t humidity = 0;
   uint8_t batteryLevel;
   sensor_t sensor_data;
+
+#if defined STM32L073xx && defined USE_STM32L0XX_NUCLEO
+    uint8_t buff[6];
+    I2C_EXPBD_ReadData((0x77<< 1 ) + 1, 0xF7, buff, sizeof(buff));
+    uint32_t temprature_xlsb = buff[5];
+    uint32_t temprature_lsb = buff[4];
+    uint32_t temprature_msb = buff[3];
+    uint32_t press_xlsb = buff[2];
+    uint32_t press_lsb = buff[1];
+    uint32_t press_msb = buff[0];
+    int32_t temprature_uncomp = (int32_t)(temprature_msb << 12 | temprature_lsb << 4 | temprature_xlsb >> 4);
+    uint32_t press_uncomp = press_msb << 12 | press_lsb << 4 | press_xlsb >> 4;
+    temperature = (int32_t) (bmp280_compensate_temperature_double(temprature_uncomp) );
+
+    PRINTF("Temp %d Calibrated Temp: %f Pressure %d\n\r", temprature_uncomp, temperature, press_uncomp);
+#endif
   
 #ifdef USE_B_L072Z_LRWAN1
   TimerInit( &TxLedTimer, OnTimerLedEvent );
@@ -219,7 +300,7 @@ static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
   uint16_t altitudeGps = 0;
 #endif
   BSP_sensor_Read( &sensor_data );
-
+  sensor_data.temperature = temperature;
 #ifdef CAYENNE_LPP
   uint8_t cchannel=0;
   temperature = ( int16_t )( sensor_data.temperature * 10 );     /* in °C * 10 */
@@ -282,8 +363,8 @@ static void LoraTxData( lora_AppData_t *AppData, FunctionalState* IsTxConfirmed)
   AppData->Buff[i++] = 0;
 #else  /* not REGION_XX915 */
   AppData->Buff[i++] = AppLedStateOn;
-  AppData->Buff[i++] = ( pressure >> 8 ) & 0xFF;
-  AppData->Buff[i++] = pressure & 0xFF;
+  AppData->Buff[i++] = 0x13;
+  AppData->Buff[i++] = 0x37;
   AppData->Buff[i++] = ( temperature >> 8 ) & 0xFF;
   AppData->Buff[i++] = temperature & 0xFF;
   AppData->Buff[i++] = ( humidity >> 8 ) & 0xFF;

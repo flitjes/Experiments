@@ -60,7 +60,7 @@ Maintainer: Miguel Luis and Gregory Cristian
 
 /* Includes ------------------------------------------------------------------*/
 #include "hw.h"
-#include "mlm32l0xx_it.h"
+#include "stm32l0xx_it.h"
 #include "low_power.h"
 
 /** @addtogroup STM32L1xx_HAL_Examples
@@ -75,8 +75,6 @@ Maintainer: Miguel Luis and Gregory Cristian
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-/* UART handler declared in "main.c" file */
-
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 

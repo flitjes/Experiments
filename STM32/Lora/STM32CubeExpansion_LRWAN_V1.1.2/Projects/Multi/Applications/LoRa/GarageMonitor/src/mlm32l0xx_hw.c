@@ -60,7 +60,6 @@ Maintainer: Miguel Luis and Gregory Cristian
 #include "hw.h"
 #include "radio.h"
 #include "debug.h"
-#include "bsp.h"
 #include "vcom.h"
 
 /*!
@@ -138,12 +137,12 @@ void HW_Init( void )
     
     vcom_Init( );
     
-    BSP_sensor_Init( );
-    
-            
     BSP_LED_Init( LED1 );
+    
     BSP_LED_Init( LED2 );
+    
     BSP_LED_Init( LED3 );
+    
     BSP_LED_Init( LED4 );
 
     McuInitialized = true;
@@ -162,76 +161,8 @@ void HW_DeInit( void )
   Radio.IoDeInit( );
   
   vcom_DeInit( );
-   
+ 
   McuInitialized = false;
-}
-
-/**
-  * @brief This function Initializes the hardware Ios
-  * @param None
-  * @retval None
-  */
-static void HW_IoInit( void )
-{
-  HW_SPI_IoInit( );
-  
-  Radio.IoInit( );
-  
-  vcom_IoInit( );
-}
-
-/**
-  * @brief This function Deinitializes the hardware Ios
-  * @param None
-  * @retval None
-  */
-static void HW_IoDeInit( void )
-{
-  /*  HW_SPI_IoDeInit( );*/
-  GPIO_InitTypeDef initStruct={0};
-    
-  initStruct.Mode =GPIO_MODE_ANALOG;
-  initStruct.Pull =GPIO_NOPULL;
-  HW_GPIO_Init ( RADIO_MOSI_PORT, RADIO_MOSI_PIN, &initStruct ); 
-  HW_GPIO_Init ( RADIO_MISO_PORT, RADIO_MISO_PIN, &initStruct ); 
-  HW_GPIO_Init ( RADIO_SCLK_PORT, RADIO_SCLK_PIN, &initStruct ); 
-  HW_GPIO_Init ( RADIO_NSS_PORT, RADIO_NSS_PIN , &initStruct ); 
-
-  
-  Radio.IoDeInit( );
-  
-  vcom_IoDeInit( );
-}
-
-
-void HW_GpioInit(void)
-{
-    GPIO_InitTypeDef GPIO_InitStruct={0};
-
-  /* Configure all GPIO as analog to reduce current consumption on non used IOs */
-  /* Enable GPIOs clock */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  /* All GPIOs except debug pins (SWCLK and SWD) */
-  GPIO_InitStruct.Pin = GPIO_PIN_All & (~( GPIO_PIN_13 | GPIO_PIN_14) );
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-  
-  /* All GPIOs */
-  GPIO_InitStruct.Pin = GPIO_PIN_All;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
-
-  /* Disable GPIOs clock */
-  __HAL_RCC_GPIOA_CLK_DISABLE();
-  __HAL_RCC_GPIOB_CLK_DISABLE();
-  __HAL_RCC_GPIOC_CLK_DISABLE();
-  __HAL_RCC_GPIOH_CLK_DISABLE();
 }
 
 /**
@@ -317,40 +248,6 @@ void HW_GetUniqueId( uint8_t *id )
     id[0] = ( ( *( uint32_t* )ID2 ) );
 }
 
-uint16_t HW_GetTemperatureLevel( void ) 
-{
-  uint16_t measuredLevel =0; 
-  uint32_t batteryLevelmV;
-  uint16_t temperatureDegreeC;
-
-  measuredLevel = HW_AdcReadChannel( ADC_CHANNEL_VREFINT ); 
-
-  if (measuredLevel ==0)
-  {
-    batteryLevelmV =0;
-  }
-  else
-  {
-    batteryLevelmV= (( (uint32_t) VDDA_VREFINT_CAL * (*VREFINT_CAL ) )/ measuredLevel);
-  }
-#if 0  
-  PRINTF("VDDA= %d\n\r", batteryLevelmV);
-#endif
-  
-  measuredLevel = HW_AdcReadChannel( ADC_CHANNEL_TEMPSENSOR ); 
-  
-  temperatureDegreeC = COMPUTE_TEMPERATURE( measuredLevel, batteryLevelmV);
-
-#if 0 
-  {
-    uint16_t temperatureDegreeC_Int= (temperatureDegreeC)>>8;
-    uint16_t temperatureDegreeC_Frac= ((temperatureDegreeC-(temperatureDegreeC_Int<<8))*100)>>8;  
-    PRINTF("temp= %d, %d,%d\n\r", temperatureDegreeC, temperatureDegreeC_Int, temperatureDegreeC_Frac);
-  }
-#endif
-  
-  return (uint16_t) temperatureDegreeC;
-}
 /**
   * @brief This function return the battery level
   * @param none
@@ -370,7 +267,7 @@ uint8_t HW_GetBatteryLevel( void )
   }
   else
   {
-    batteryLevelmV= (( (uint32_t) VDDA_VREFINT_CAL * (*VREFINT_CAL ) )/ measuredLevel);
+    batteryLevelmV= (( (uint32_t) VDDA_TEMP_CAL * (*VREFINT_CAL ) )/ measuredLevel);
   }
 
   if (batteryLevelmV > VDD_BAT)
@@ -398,21 +295,19 @@ void HW_AdcInit( void )
   if( AdcInitialized == false )
   {
     AdcInitialized = true;
-#if 0
     GPIO_InitTypeDef initStruct;
-#endif
     
     hadc.Instance  = ADC1;
     
     hadc.Init.OversamplingMode      = DISABLE;
   
-    hadc.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
+    hadc.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV1;
     hadc.Init.LowPowerAutoPowerOff  = DISABLE;
     hadc.Init.LowPowerFrequencyMode = ENABLE;
     hadc.Init.LowPowerAutoWait      = DISABLE;
     
     hadc.Init.Resolution            = ADC_RESOLUTION_12B;
-    hadc.Init.SamplingTime          = ADC_SAMPLETIME_160CYCLES_5;
+    hadc.Init.SamplingTime          = ADC_SAMPLETIME_7CYCLES_5;
     hadc.Init.ScanConvMode          = ADC_SCAN_DIRECTION_FORWARD;
     hadc.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
     hadc.Init.ContinuousConvMode    = DISABLE;
@@ -425,13 +320,12 @@ void HW_AdcInit( void )
     
 
     HAL_ADC_Init( &hadc );
-#if 0
+
     initStruct.Mode =GPIO_MODE_ANALOG;
     initStruct.Pull = GPIO_NOPULL;
     initStruct.Speed = GPIO_SPEED_HIGH;
 
     HW_GPIO_Init( BAT_LEVEL_PORT, BAT_LEVEL_PIN, &initStruct );
-#endif
   }
 }
 /**
@@ -503,7 +397,7 @@ void HW_EnterStopMode( void)
 
   DISABLE_IRQ( );
 
-  HW_IoDeInit( );
+  HW_DeInit( );
   
   /*clear wake up flag*/
   SET_BIT(PWR->CR, PWR_CR_CWUF);
@@ -546,7 +440,7 @@ void HW_ExitStopMode( void)
   while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_PLLCLK ) {}
     
   /*initilizes the peripherals*/
-  HW_IoInit( );
+  HW_Init( );
 
   RESTORE_PRIMASK( );
 }
